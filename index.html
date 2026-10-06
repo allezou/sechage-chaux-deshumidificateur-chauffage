@@ -138,22 +138,12 @@
       background: #fff;
     }
 
-    .input-wrapper input.error {
-      border-color: var(--status-danger-border);
-      background: var(--status-danger-bg);
-      color: var(--status-danger-text);
-    }
-
     .input-wrapper .unit {
       position: absolute;
       right: 10px;
       font-size: 0.85rem;
       color: var(--text-muted);
       pointer-events: none;
-    }
-
-    .input-wrapper input.error ~ .unit {
-      color: var(--status-danger-text);
     }
 
     .dp-result {
@@ -259,30 +249,16 @@
       border-radius: 10px;
       border: 1px solid var(--border-color);
     }
-
-    .error-message {
-      font-size: 0.8rem;
-      color: var(--status-danger-text);
-      background: var(--status-danger-bg);
-      border: 1px solid var(--status-danger-border);
-      padding: 12px;
-      border-radius: 10px;
-      margin-bottom: 16px;
-      text-align: center;
-    }
   </style>
 </head>
 <body>
 
   <header>
-    <h3>test</h3>
     <h1>Assistant Séchage Chaux-Chanvre</h1>
     <p>Pilotage intelligent & économique</p>
   </header>
 
   <main>
-    <div id="error-container"></div>
-
     <!-- Saisie Intérieur -->
     <div class="card">
       <div class="card-title">🏠 Intérieur</div>
@@ -290,14 +266,14 @@
         <div class="field">
           <label for="temp-in">Température</label>
           <div class="input-wrapper">
-            <input type="number" id="temp-in" step="0.1" inputmode="decimal">
+            <input type="number" id="temp-in" step="0.1" value="16.5" inputmode="decimal">
             <span class="unit">°C</span>
           </div>
         </div>
         <div class="field">
           <label for="hum-in">Humidité</label>
           <div class="input-wrapper">
-            <input type="number" id="hum-in" step="1" min="0" max="100" inputmode="numeric">
+            <input type="number" id="hum-in" step="1" min="0" max="100" value="72" inputmode="numeric">
             <span class="unit">%</span>
           </div>
         </div>
@@ -315,14 +291,14 @@
         <div class="field">
           <label for="temp-out">Température</label>
           <div class="input-wrapper">
-            <input type="number" id="temp-out" step="0.1" inputmode="decimal">
+            <input type="number" id="temp-out" step="0.1" value="11.0" inputmode="decimal">
             <span class="unit">°C</span>
           </div>
         </div>
         <div class="field">
           <label for="hum-out">Humidité</label>
           <div class="input-wrapper">
-            <input type="number" id="hum-out" step="1" min="0" max="100" inputmode="numeric">
+            <input type="number" id="hum-out" step="1" min="0" max="100" value="85" inputmode="numeric">
             <span class="unit">%</span>
           </div>
         </div>
@@ -439,10 +415,12 @@
 
       // ÉVALUATION MÉTÉO EXATÉRIEURE
       const diffDP = dpIn - dpOut;
-      const isOutdoorAirDrier = diffDP > 2;
-      const isTooColdOutside = tempOut < 5;
+      const isOutdoorAirDrier = diffDP > 2; // Air extérieur nettement plus sec
+      const isTooColdOutside = tempOut < 5;  // Trop froid dehors
 
+      // CHOIX DE LA STRATÉGIE
       if (isOutdoorAirDrier && !isTooColdOutside) {
+        // STRATÉGIE A : AÉRATION PONCTUELLE
         strategyMode.textContent = "💨 STRATÉGIE : AÉRATION FLASH (15-30 MIN)";
         
         windowBox.className = 'verdict-card ok';
@@ -458,6 +436,7 @@
         dehumDesc.textContent = `L'appareil ne doit pas tourner avec les fenêtres ouvertes.`;
 
       } else {
+        // STRATÉGIE B : SÉCHAGE EN CIRCUIT FERMÉ
         strategyMode.textContent = "🔒 STRATÉGIE : SÉCHAGE FERMÉ (TRAITEMENT INTÉRIEUR)";
 
         windowBox.className = 'verdict-card danger';
@@ -468,6 +447,7 @@
           windowDesc.textContent = `L'air extérieur est trop humide (${ahOut} g/m³). L'aération n'est pas efficace.`;
         }
 
+        // Décision Chauffage en circuit fermé
         if (tempIn < 15) {
           heatBox.className = 'verdict-card danger';
           heatBadge.textContent = '🔥 RADIATEURS : ALLUMER ➔ RÉGLER SUR 18°C';
@@ -492,72 +472,47 @@
           heatDesc.textContent = `Température élevée (${tempIn}°C). Baissez sous 20°C pour éviter les fissures de surface sur la chaux.`;
         }
 
+        // Décision Déshumidificateur en circuit fermé
         dehumBox.className = 'verdict-card danger';
         dehumBadge.textContent = '💧 DÉSHUMIDIFICATEUR : ALLUMER ➔ CONSIGNE 60%';
         dehumDesc.textContent = `Fenêtres fermées, le déshumidificateur extrait l'humidité du mur en circuit fermé.`;
       }
     }
 
-    function initializeFromStorage() {
+    window.addEventListener('DOMContentLoaded', () => {
       if (localStorage.getItem('tempIn')) document.getElementById('temp-in').value = localStorage.getItem('tempIn');
       if (localStorage.getItem('humIn')) document.getElementById('hum-in').value = localStorage.getItem('humIn');
       if (localStorage.getItem('tempOut')) document.getElementById('temp-out').value = localStorage.getItem('tempOut');
       if (localStorage.getItem('humOut')) document.getElementById('hum-out').value = localStorage.getItem('humOut');
-    }
-
-    function setupInputListeners() {
-      const inputs = document.querySelectorAll('input');
-      inputs.forEach(input => input.addEventListener('input', updateCalculations));
-    }
-
-    function clearInputs() {
-      document.getElementById('temp-in').value = '';
-      document.getElementById('hum-in').value = '';
-      document.getElementById('temp-out').value = '';
-      document.getElementById('hum-out').value = '';
-    }
-
-    function showErrorMessage(message) {
-      const errorContainer = document.getElementById('error-container');
-      errorContainer.innerHTML = `<div class="error-message">⚠️ ${message}</div>`;
       
-      const inputs = ['temp-in', 'hum-in', 'temp-out', 'hum-out'];
-      inputs.forEach(id => {
-        document.getElementById(id).classList.add('error');
-      });
-    }
-
-    function clearErrorMessage() {
-      const errorContainer = document.getElementById('error-container');
-      errorContainer.innerHTML = '';
-      
-      const inputs = ['temp-in', 'hum-in', 'temp-out', 'hum-out'];
-      inputs.forEach(id => {
-        document.getElementById(id).classList.remove('error');
-      });
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      initializeFromStorage();
-      setupInputListeners();
       updateCalculations();
-      fetchWeatherStationData();
     });
+
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => input.addEventListener('input', updateCalculations));
   </script>
-  <script>
+  <!-- Inclusion de CryptoJS pour la signature sécurisée Tuya -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
+<script>
+// ==========================================
+// CONFIGURATION DE VOS IDENTIFIANTS TUYA
+// ==========================================
 const TUYA_CONFIG = {
-    clientId: 'wtq4haax7ug8rkqv5dm7',
-    clientSecret: '97db84643afa43bc8c9d88bc8cc184bb',
-    deviceId: 'bf9889c24c8b1d514d3af7',
-    baseUrl: 'https://openapi.tuyaeu.com'
+    clientId: 'VOTRE_CLIENT_ID',        // Access ID
+    clientSecret: 'VOTRE_CLIENT_SECRET',// Access Secret
+    deviceId: 'VOTRE_DEVICE_ID',        // Device ID de la station météo
+    baseUrl: 'https://openapi.tuyaeu.com' // Data Center Western Europe
 };
 
+// Fonction pour générer la signature HMAC-SHA256 requise par Tuya
 function calcSign(clientId, secret, timestamp, accessToken = "", url = "/v1.0/token?grant_type=1") {
     const str = clientId + accessToken + timestamp + "GET\n" + 
                 CryptoJS.SHA256("").toString() + "\n\n" + url;
     return CryptoJS.HmacSHA256(str, secret).toString().toUpperCase();
 }
 
+// 1. Obtenir le Token d'accès Tuya
 async function getTuyaToken() {
     const timestamp = Date.now().toString();
     const url = "/v1.0/token?grant_type=1";
@@ -575,6 +530,7 @@ async function getTuyaToken() {
     return data.result.access_token;
 }
 
+// 2. Récupérer les données de la station météo
 async function fetchWeatherStationData() {
     try {
         console.log("Connexion à la station météo...");
@@ -596,42 +552,40 @@ async function fetchWeatherStationData() {
         const data = await response.json();
         console.log("Données reçues de la station :", data);
 
-        if (data.success && data.result && data.result.length > 0) {
+        if (data.success) {
+            // Extraction des points de données (DPs)
             let tempIn, humIn, tempOut, humOut;
 
             data.result.forEach(dp => {
+                // Correspondance automatique selon le nom des codes de votre station
                 if (dp.code.includes('temp_indoor') || dp.code === 'va_temperature') tempIn = dp.value;
                 if (dp.code.includes('humidity_indoor') || dp.code === 'va_humidity') humIn = dp.value;
                 if (dp.code.includes('temp_outdoor') || dp.code === 'temp_current') tempOut = dp.value;
                 if (dp.code.includes('humidity_outdoor') || dp.code === 'humidity') humOut = dp.value;
             });
 
+            // Si les valeurs sont divisées par 10 par la station (ex: 215 pour 21.5°C)
             if (tempIn > 50) tempIn /= 10;
             if (tempOut > 50) tempOut /= 10;
 
-            if (tempIn !== undefined && humIn !== undefined && tempOut !== undefined && humOut !== undefined) {
-                document.getElementById('temp-in').value = tempIn;
-                document.getElementById('hum-in').value = humIn;
-                document.getElementById('temp-out').value = tempOut;
-                document.getElementById('hum-out').value = humOut;
-                
-                clearErrorMessage();
-                updateCalculations();
-            } else {
-                clearInputs();
-                showErrorMessage("⚠️ Erreur : Données incomplètes reçues de la station météo. Veuillez vérifier la connexion ou entrer les valeurs manuellement.");
+            // Mise à jour automatique de votre interface
+            document.getElementById('temp_interieur').value = tempIn;
+            document.getElementById('hum_interieur').value = humIn;
+            document.getElementById('temp_exterieur').value = tempOut;
+            document.getElementById('hum_exterieur').value = humOut;
+
+            // Relancer le calcul de séchage chaux-chanvre
+            if (typeof calculerSechage === 'function') {
+                calculerSechage();
             }
-        } else {
-            clearInputs();
-            showErrorMessage("⚠️ Erreur : Impossible de récupérer les données de la station météo Tuya. Veuillez entrer les valeurs manuellement.");
-            console.error("Erreur renvoyée par l'API Tuya :", data);
         }
     } catch (error) {
-        clearInputs();
-        showErrorMessage("⚠️ Erreur de connexion : Impossible de communiquer avec la station météo. Veuillez vérifier votre connexion réseau et entrer les valeurs manuellement.");
         console.error("Erreur de récupération des données Tuya :", error);
     }
 }
-  </script>
+
+// Exécuter la mise à jour automatique au chargement de la page
+window.addEventListener('DOMContentLoaded', fetchWeatherStationData);
+</script>
 </body>
 </html>
