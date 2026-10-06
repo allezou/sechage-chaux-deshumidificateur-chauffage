@@ -500,7 +500,7 @@
 // ==========================================
 const TUYA_CONFIG = {
     clientId: 'wtq4haax7ug8rkqv5dm7',        // Access ID
-    clientSecret: '97db84643afa43bc8c9d88bc8cc184bb',// Access Secret
+    clientSecret: '97db84643afa43bc8c9d88bc8cc184bb ',    // Access Secret
     deviceId: 'bf9889c24c8b1d514d3af7',        // Device ID de la station météo
     baseUrl: 'https://openapi.tuyaeu.com' // Data Center Western Europe
 };
@@ -553,31 +553,29 @@ async function fetchWeatherStationData() {
         console.log("Données reçues de la station :", data);
 
         if (data.success) {
-            // Extraction des points de données (DPs)
             let tempIn, humIn, tempOut, humOut;
 
             data.result.forEach(dp => {
-                // Correspondance automatique selon le nom des codes de votre station
                 if (dp.code.includes('temp_indoor') || dp.code === 'va_temperature') tempIn = dp.value;
                 if (dp.code.includes('humidity_indoor') || dp.code === 'va_humidity') humIn = dp.value;
                 if (dp.code.includes('temp_outdoor') || dp.code === 'temp_current') tempOut = dp.value;
                 if (dp.code.includes('humidity_outdoor') || dp.code === 'humidity') humOut = dp.value;
             });
 
-            // Si les valeurs sont divisées par 10 par la station (ex: 215 pour 21.5°C)
+            // Ajustement si les valeurs brutes sont multipliées par 10 (ex: 215 -> 21.5)
             if (tempIn > 50) tempIn /= 10;
             if (tempOut > 50) tempOut /= 10;
 
-            // Mise à jour automatique de votre interface
-            document.getElementById('temp_interieur').value = tempIn;
-            document.getElementById('hum_interieur').value = humIn;
-            document.getElementById('temp_exterieur').value = tempOut;
-            document.getElementById('hum_exterieur').value = humOut;
+            // Mise à jour des vrais IDs du formulaire
+            if (tempIn !== undefined) document.getElementById('temp-in').value = tempIn;
+            if (humIn !== undefined) document.getElementById('hum-in').value = humIn;
+            if (tempOut !== undefined) document.getElementById('temp-out').value = tempOut;
+            if (humOut !== undefined) document.getElementById('hum-out').value = humOut;
 
-            // Relancer le calcul de séchage chaux-chanvre
-            if (typeof calculerSechage === 'function') {
-                calculerSechage();
-            }
+            // Relancer les calculs avec les bons identifiants
+            updateCalculations();
+        } else {
+            console.error("Erreur renvoyée par l'API Tuya :", data);
         }
     } catch (error) {
         console.error("Erreur de récupération des données Tuya :", error);
