@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Séchage Chaux">
+  <title>Séchage Chaux-Chanvre - Pilotage Cohérent</title>
+  
+  <style>
+    :root {
+      --bg-color: #f4f6f8;
+      --card-bg: #ffffff;
+      --text-main: #1f2937;
+      --text-muted: #6b7280;
+      --border-color: #e5e7eb;
+      --primary: #2563eb;
+      
+      --status-ok-bg: #d1fae5;
+      --status-ok-border: #10b981;
+      --status-ok-text: #065f46;
+      
+      --status-warn-bg: #fef3c7;
+      --status-warn-border: #f59e0b;
+      --status-warn-text: #92400e;
+      
+      --status-danger-bg: #fee2e2;
+      --status-danger-border: #ef4444;
+      --status-danger-text: #991b1b;
+
+      --status-info-bg: #eff6ff;
+      --status-info-border: #3b82f6;
+      --status-info-text: #1e40af;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      margin: 0;
+      padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom) 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    header {
+      width: 100%;
+      max-width: 500px;
+      padding: 20px 0 10px 0;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 1.3rem;
+      margin: 0;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    header p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin: 4px 0 0 0;
+    }
+
+    main {
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      border: 1px solid var(--border-color);
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .input-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .field label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrapper input {
+      width: 100%;
+      padding: 10px 30px 10px 12px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      background: #f9fafb;
+      color: var(--text-main);
+      outline: none;
+    }
+
+    .input-wrapper input:focus {
+      border-color: var(--primary);
+      background: #fff;
+    }
+
+    .input-wrapper .unit {
+      position: absolute;
+      right: 10px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .dp-result {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border-color);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .dp-value {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .strategy-card {
+      background: #1e293b;
+      color: #ffffff;
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .strategy-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #94a3b8;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .strategy-mode {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #38bdf8;
+    }
+
+    .verdict-card {
+      border-radius: 16px;
+      padding: 14px 16px;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+
+    .verdict-card.ok {
+      background-color: var(--status-ok-bg);
+      border-color: var(--status-ok-border);
+      color: var(--status-ok-text);
+    }
+
+    .verdict-card.warn {
+      background-color: var(--status-warn-bg);
+      border-color: var(--status-warn-border);
+      color: var(--status-warn-text);
+    }
+
+    .verdict-card.danger {
+      background-color: var(--status-danger-bg);
+      border-color: var(--status-danger-border);
+      color: var(--status-danger-text);
+    }
+
+    .verdict-card.info {
+      background-color: var(--status-info-bg);
+      border-color: var(--status-info-border);
+      color: var(--status-info-text);
+    }
+
+    .verdict-badge {
+      font-size: 1rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .verdict-desc {
+      font-size: 0.85rem;
+      line-height: 1.4;
+      font-weight: 500;
+    }
+
+    .section-header {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .explanation {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      background: rgba(255,255,255,0.7);
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Assistant Séchage Chaux-Chanvre</h1>
+    <p>Pilotage intelligent & économique</p>
+  </header>
+
+  <main>
+    <!-- Saisie Intérieur -->
+    <div class="card">
+      <div class="card-title">🏠 Intérieur</div>
+      <div class="input-grid">
+        <div class="field">
+          <label for="temp-in">Température</label>
+          <div class="input-wrapper">
+            <input type="number" id="temp-in" step="0.1" value="16.5" inputmode="decimal">
+            <span class="unit">°C</span>
+          </div>
+        </div>
+        <div class="field">
+          <label for="hum-in">Humidité</label>
+          <div class="input-wrapper">
+            <input type="number" id="hum-in" step="1" min="0" max="100" value="72" inputmode="numeric">
+            <span class="unit">%</span>
+          </div>
+        </div>
+      </div>
+      <div class="dp-result">
+        <span>Masse d'eau absolue :</span>
+        <span class="dp-value" id="dp-in-val">-- g/m³</span>
+      </div>
+    </div>
+
+    <!-- Saisie Extérieur -->
+    <div class="card">
+      <div class="card-title">🌳 Extérieur</div>
+      <div class="input-grid">
+        <div class="field">
+          <label for="temp-out">Température</label>
+          <div class="input-wrapper">
+            <input type="number" id="temp-out" step="0.1" value="11.0" inputmode="decimal">
+            <span class="unit">°C</span>
+          </div>
+        </div>
+        <div class="field">
+          <label for="hum-out">Humidité</label>
+          <div class="input-wrapper">
+            <input type="number" id="hum-out" step="1" min="0" max="100" value="85" inputmode="numeric">
+            <span class="unit">%</span>
+          </div>
+        </div>
+      </div>
+      <div class="dp-result">
+        <span>Masse d'eau absolue :</span>
+        <span class="dp-value" id="dp-out-val">-- g/m³</span>
+      </div>
+    </div>
+
+    <!-- Mode Stratégique recommandé -->
+    <div class="strategy-card">
+      <div class="strategy-title">STRATÉGIE RECOMMANDÉE</div>
+      <div id="strategy-mode" class="strategy-mode">ANALYSE EN COURS...</div>
+    </div>
+
+    <div class="section-header">Consignes d'Action</div>
+
+    <!-- Action Fenêtres -->
+    <div id="window-box" class="verdict-card info">
+      <div id="window-badge" class="verdict-badge">---</div>
+      <div id="window-desc" class="verdict-desc">---</div>
+    </div>
+
+    <!-- Action Chauffage -->
+    <div id="heat-box" class="verdict-card info">
+      <div id="heat-badge" class="verdict-badge">---</div>
+      <div id="heat-desc" class="verdict-desc">---</div>
+    </div>
+
+    <!-- Action Déshumidificateur -->
+    <div id="dehum-box" class="verdict-card info">
+      <div id="dehum-badge" class="verdict-badge">---</div>
+      <div id="dehum-desc" class="verdict-desc">---</div>
+    </div>
+
+    <div class="explanation">
+      💡 <strong>Règles de sécurité énergétique :</strong><br>
+      • <strong>Règle 1 :</strong> Ne jamais faire tourner le déshumidificateur avec les fenêtres ouvertes (inutile et énergivore).<br>
+      • <strong>Règle 2 :</strong> Couper le chauffage durant les phases d'aération.<br>
+      • <strong>Séchage atteint :</strong> À <strong>60% HR</strong> intérieur, le mur est sec pour la saison.
+    </div>
+  </main>
+
+  <script>
+    function calculateAbsoluteHumidity(temp, hum) {
+      if (isNaN(temp) || isNaN(hum) || hum <= 0 || hum > 100) return null;
+      const ah = (6.112 * Math.exp((17.67 * temp) / (temp + 243.5)) * hum * 2.1674) / (273.15 + temp);
+      return Math.round(ah * 10) / 10;
+    }
+
+    function calculateDewPoint(temp, hum) {
+      if (isNaN(temp) || isNaN(hum) || hum <= 0 || hum > 100) return null;
+      const a = 17.27;
+      const b = 237.7;
+      const alpha = ((a * temp) / (b + temp)) + Math.log(hum / 100);
+      return Math.round(((b * alpha) / (a - alpha)) * 10) / 10;
+    }
+
+    function updateCalculations() {
+      const tempIn = parseFloat(document.getElementById('temp-in').value);
+      const humIn = parseFloat(document.getElementById('hum-in').value);
+      const tempOut = parseFloat(document.getElementById('temp-out').value);
+      const humOut = parseFloat(document.getElementById('hum-out').value);
+
+      localStorage.setItem('tempIn', tempIn);
+      localStorage.setItem('humIn', humIn);
+      localStorage.setItem('tempOut', tempOut);
+      localStorage.setItem('humOut', humOut);
+
+      const ahIn = calculateAbsoluteHumidity(tempIn, humIn);
+      const ahOut = calculateAbsoluteHumidity(tempOut, humOut);
+      const dpIn = calculateDewPoint(tempIn, humIn);
+      const dpOut = calculateDewPoint(tempOut, humOut);
+
+      document.getElementById('dp-in-val').textContent = ahIn !== null ? `${ahIn.toFixed(1)} g/m³ (Td ${dpIn}°C)` : '--';
+      document.getElementById('dp-out-val').textContent = ahOut !== null ? `${ahOut.toFixed(1)} g/m³ (Td ${dpOut}°C)` : '--';
+
+      const strategyMode = document.getElementById('strategy-mode');
+      const windowBox = document.getElementById('window-box');
+      const windowBadge = document.getElementById('window-badge');
+      const windowDesc = document.getElementById('window-desc');
+
+      const heatBox = document.getElementById('heat-box');
+      const heatBadge = document.getElementById('heat-badge');
+      const heatDesc = document.getElementById('heat-desc');
+
+      const dehumBox = document.getElementById('dehum-box');
+      const dehumBadge = document.getElementById('dehum-badge');
+      const dehumDesc = document.getElementById('dehum-desc');
+
+      if (isNaN(tempIn) || isNaN(humIn) || isNaN(tempOut) || isNaN(humOut)) {
+        strategyMode.textContent = "DONNÉES INCOMPLÈTES";
+        return;
+      }
+
+      // CAS 0 : Le mur est déjà sec
+      if (humIn <= 60) {
+        strategyMode.textContent = "✅ MUR STABILISÉ / SÉCHAGE ATTEINT";
+        
+        windowBox.className = 'verdict-card ok';
+        windowBadge.textContent = '🪟 FENÊTRES : FERMÉES (Ou normal)';
+        windowDesc.textContent = `L'humidité intérieure (${humIn}%) est sous le seuil cible de 60%.`;
+
+        heatBox.className = 'verdict-card ok';
+        heatBadge.textContent = '🔥 RADIATEURS : ÉTEINDRE / MAINTIEN';
+        heatDesc.textContent = `Conservez une température confortable sans chauffer excessivement.`;
+
+        dehumBox.className = 'verdict-card ok';
+        dehumBadge.textContent = '💧 DÉSHUMIDIFICATEUR : ÉTEINDRE';
+        dehumDesc.textContent = `Objectif atteint. Éteignez l'appareil.`;
+        return;
+      }
+
+      // ÉVALUATION MÉTÉO EXATÉRIEURE
+      const diffDP = dpIn - dpOut;
+      const isOutdoorAirDrier = diffDP > 2; // Air extérieur nettement plus sec
+      const isTooColdOutside = tempOut < 5;  // Trop froid dehors
+
+      // CHOIX DE LA STRATÉGIE
+      if (isOutdoorAirDrier && !isTooColdOutside) {
+        // STRATÉGIE A : AÉRATION PONCTUELLE
+        strategyMode.textContent = "💨 STRATÉGIE : AÉRATION FLASH (15-30 MIN)";
+        
+        windowBox.className = 'verdict-card ok';
+        windowBadge.textContent = '🪟 FENÊTRES : OUVRIR (15 à 30 min)';
+        windowDesc.textContent = `L'air extérieur est sec (${ahOut} g/m³ vs ${ahIn} g/m³ intérieur). Évacuation de ~${(ahIn - ahOut).toFixed(1)} g/m³.`;
+
+        heatBox.className = 'verdict-card warn';
+        heatBadge.textContent = '🔥 RADIATEURS : ÉTEINDRE PENDANT L\'AÉRATION';
+        heatDesc.textContent = `Ne pas chauffer fenêtres ouvertes pour éviter le gaspillage d'énergie.`;
+
+        dehumBox.className = 'verdict-card warn';
+        dehumBadge.textContent = '💧 DÉSHUMIDIFICATEUR : ÉTEINDRE PENDANT L\'AÉRATION';
+        dehumDesc.textContent = `L'appareil ne doit pas tourner avec les fenêtres ouvertes.`;
+
+      } else {
+        // STRATÉGIE B : SÉCHAGE EN CIRCUIT FERMÉ
+        strategyMode.textContent = "🔒 STRATÉGIE : SÉCHAGE FERMÉ (TRAITEMENT INTÉRIEUR)";
+
+        windowBox.className = 'verdict-card danger';
+        windowBadge.textContent = '🪟 FENÊTRES : FERMER';
+        if (isTooColdOutside) {
+          windowDesc.textContent = `Extérieur trop froid (${tempOut}°C). Ouvrir refroidirait les murs et stopperait le séchage.`;
+        } else {
+          windowDesc.textContent = `L'air extérieur est trop humide (${ahOut} g/m³). L'aération n'est pas efficace.`;
+        }
+
+        // Décision Chauffage en circuit fermé
+        if (tempIn < 15) {
+          heatBox.className = 'verdict-card danger';
+          heatBadge.textContent = '🔥 RADIATEURS : ALLUMER ➔ RÉGLER SUR 18°C';
+          heatDesc.textContent = `Pièce trop froide (${tempIn}°C). Chauffer est nécessaire pour relancer l'évaporation et aider le déshumidificateur.`;
+        } else if (tempIn >= 15 && tempIn < 18) {
+          if (humIn > 65) {
+            heatBox.className = 'verdict-card warn';
+            heatBadge.textContent = '🔥 RADIATEURS : ALLUMER (BOOST) ➔ RÉGLER SUR 18°C';
+            heatDesc.textContent = `Chauffer à 18°C fera baisser l'humidité relative ambiante et relancera l'extraction d'eau du mur.`;
+          } else {
+            heatBox.className = 'verdict-card ok';
+            heatBadge.textContent = '🔥 RADIATEURS : MAINTENIR / ÉTEINDRE';
+            heatDesc.textContent = `Température suffisante (${tempIn}°C) pour le niveau d'humidité actuel (${humIn}%).`;
+          }
+        } else if (tempIn >= 18 && tempIn <= 20) {
+          heatBox.className = 'verdict-card ok';
+          heatBadge.textContent = '🔥 RADIATEURS : MAINTENIR A 18°C OU ÉTEINDRE';
+          heatDesc.textContent = `Zone de température idéale (${tempIn}°C).`;
+        } else {
+          heatBox.className = 'verdict-card warn';
+          heatBadge.textContent = '🔥 RADIATEURS : ÉTEINDRE';
+          heatDesc.textContent = `Température élevée (${tempIn}°C). Baissez sous 20°C pour éviter les fissures de surface sur la chaux.`;
+        }
+
+        // Décision Déshumidificateur en circuit fermé
+        dehumBox.className = 'verdict-card danger';
+        dehumBadge.textContent = '💧 DÉSHUMIDIFICATEUR : ALLUMER ➔ CONSIGNE 60%';
+        dehumDesc.textContent = `Fenêtres fermées, le déshumidificateur extrait l'humidité du mur en circuit fermé.`;
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('tempIn')) document.getElementById('temp-in').value = localStorage.getItem('tempIn');
+      if (localStorage.getItem('humIn')) document.getElementById('hum-in').value = localStorage.getItem('humIn');
+      if (localStorage.getItem('tempOut')) document.getElementById('temp-out').value = localStorage.getItem('tempOut');
+      if (localStorage.getItem('humOut')) document.getElementById('hum-out').value = localStorage.getItem('humOut');
+      
+      updateCalculations();
+    });
+
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => input.addEventListener('input', updateCalculations));
+  </script>
+</body>
+</html>
