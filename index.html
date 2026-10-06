@@ -416,12 +416,10 @@
 
       // ÉVALUATION MÉTÉO EXATÉRIEURE
       const diffDP = dpIn - dpOut;
-      const isOutdoorAirDrier = diffDP > 2; // Air extérieur nettement plus sec
-      const isTooColdOutside = tempOut < 5;  // Trop froid dehors
+      const isOutdoorAirDrier = diffDP > 2;
+      const isTooColdOutside = tempOut < 5;
 
-      // CHOIX DE LA STRATÉGIE
       if (isOutdoorAirDrier && !isTooColdOutside) {
-        // STRATÉGIE A : AÉRATION PONCTUELLE
         strategyMode.textContent = "💨 STRATÉGIE : AÉRATION FLASH (15-30 MIN)";
         
         windowBox.className = 'verdict-card ok';
@@ -437,7 +435,6 @@
         dehumDesc.textContent = `L'appareil ne doit pas tourner avec les fenêtres ouvertes.`;
 
       } else {
-        // STRATÉGIE B : SÉCHAGE EN CIRCUIT FERMÉ
         strategyMode.textContent = "🔒 STRATÉGIE : SÉCHAGE FERMÉ (TRAITEMENT INTÉRIEUR)";
 
         windowBox.className = 'verdict-card danger';
@@ -448,7 +445,6 @@
           windowDesc.textContent = `L'air extérieur est trop humide (${ahOut} g/m³). L'aération n'est pas efficace.`;
         }
 
-        // Décision Chauffage en circuit fermé
         if (tempIn < 15) {
           heatBox.className = 'verdict-card danger';
           heatBadge.textContent = '🔥 RADIATEURS : ALLUMER ➔ RÉGLER SUR 18°C';
@@ -473,44 +469,45 @@
           heatDesc.textContent = `Température élevée (${tempIn}°C). Baissez sous 20°C pour éviter les fissures de surface sur la chaux.`;
         }
 
-        // Décision Déshumidificateur en circuit fermé
         dehumBox.className = 'verdict-card danger';
         dehumBadge.textContent = '💧 DÉSHUMIDIFICATEUR : ALLUMER ➔ CONSIGNE 60%';
         dehumDesc.textContent = `Fenêtres fermées, le déshumidificateur extrait l'humidité du mur en circuit fermé.`;
       }
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
+    function initializeFromStorage() {
       if (localStorage.getItem('tempIn')) document.getElementById('temp-in').value = localStorage.getItem('tempIn');
       if (localStorage.getItem('humIn')) document.getElementById('hum-in').value = localStorage.getItem('humIn');
       if (localStorage.getItem('tempOut')) document.getElementById('temp-out').value = localStorage.getItem('tempOut');
       if (localStorage.getItem('humOut')) document.getElementById('hum-out').value = localStorage.getItem('humOut');
-      
-      updateCalculations();
-    });
+    }
 
-    const inputs = document.querySelectorAll('input');
-    inputs.forEach(input => input.addEventListener('input', updateCalculations));
+    function setupInputListeners() {
+      const inputs = document.querySelectorAll('input');
+      inputs.forEach(input => input.addEventListener('input', updateCalculations));
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initializeFromStorage();
+      setupInputListeners();
+      updateCalculations();
+      fetchWeatherStationData();
+    });
   </script>
   <script>
-// ==========================================
-// CONFIGURATION DE VOS IDENTIFIANTS TUYA
-// ==========================================
 const TUYA_CONFIG = {
-    clientId: 'wtq4haax7ug8rkqv5dm7',        // Access ID
-    clientSecret: '97db84643afa43bc8c9d88bc8cc184bb',    // Access Secret
-    deviceId: 'bf9889c24c8b1d514d3af7',        // Device ID de la station météo
-    baseUrl: 'https://openapi.tuyaeu.com' // Data Center Western Europe
+    clientId: 'wtq4haax7ug8rkqv5dm7',
+    clientSecret: '97db84643afa43bc8c9d88bc8cc184bb',
+    deviceId: 'bf9889c24c8b1d514d3af7',
+    baseUrl: 'https://openapi.tuyaeu.com'
 };
 
-// Fonction pour générer la signature HMAC-SHA256 requise par Tuya
 function calcSign(clientId, secret, timestamp, accessToken = "", url = "/v1.0/token?grant_type=1") {
     const str = clientId + accessToken + timestamp + "GET\n" + 
                 CryptoJS.SHA256("").toString() + "\n\n" + url;
     return CryptoJS.HmacSHA256(str, secret).toString().toUpperCase();
 }
 
-// 1. Obtenir le Token d'accès Tuya
 async function getTuyaToken() {
     const timestamp = Date.now().toString();
     const url = "/v1.0/token?grant_type=1";
@@ -528,7 +525,6 @@ async function getTuyaToken() {
     return data.result.access_token;
 }
 
-// 2. Récupérer les données de la station météo
 async function fetchWeatherStationData() {
     try {
         console.log("Connexion à la station météo...");
@@ -560,17 +556,14 @@ async function fetchWeatherStationData() {
                 if (dp.code.includes('humidity_outdoor') || dp.code === 'humidity') humOut = dp.value;
             });
 
-            // Ajustement si les valeurs brutes sont multipliées par 10 (ex: 215 -> 21.5)
             if (tempIn > 50) tempIn /= 10;
             if (tempOut > 50) tempOut /= 10;
 
-            // Mise à jour des vrais IDs du formulaire
             if (tempIn !== undefined) document.getElementById('temp-in').value = tempIn;
             if (humIn !== undefined) document.getElementById('hum-in').value = humIn;
             if (tempOut !== undefined) document.getElementById('temp-out').value = tempOut;
             if (humOut !== undefined) document.getElementById('hum-out').value = humOut;
 
-            // Relancer les calculs avec les bons identifiants
             updateCalculations();
         } else {
             console.error("Erreur renvoyée par l'API Tuya :", data);
@@ -579,9 +572,6 @@ async function fetchWeatherStationData() {
         console.error("Erreur de récupération des données Tuya :", error);
     }
 }
-
-// Exécuter la mise à jour automatique au chargement de la page
-window.addEventListener('DOMContentLoaded', fetchWeatherStationData);
-</script>
+  </script>
 </body>
 </html>
